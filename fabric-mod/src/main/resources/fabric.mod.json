@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "craftgpt",
+  "version": "${version}",
+  "name": "CraftGPT",
+  "description": "Plan, preview and build Minecraft structures from player intentions.",
+  "authors": ["CraftGPT contributors"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["dev.craftgpt.CraftGptMod"],
+    "client": ["dev.craftgpt.client.CraftGptClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.1.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

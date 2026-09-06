@@ -1,0 +1,14 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'../src/main/resources/assets/craftgpt/portable/preview.html'),'utf8');
+const start=html.indexOf('  function operationMap(build)'),end=html.indexOf('  function color(block)',start);
+const op=vm.runInNewContext(html.slice(start,end)+'; operationMap');
+const component=(kind,from,to,paletteIndex=0)=>({id:'part',kind,from,to,paletteIndex,axis:'z',facing:'south'});
+const draft=(components,operations=[])=>({palette:['minecraft:dark_oak_planks','minecraft:red_terracotta'],components,operations});
+const floor=op(draft([component('fill',[0,0,0],[2,0,2])],['1,0,1,1']));
+assert.equal(floor.size,9);assert.equal(floor.get('1,0,1'),'minecraft:red_terracotta');assert.equal(floor.get('0,0,0'),'minecraft:dark_oak_planks');
+assert.equal(op(draft([component('shell',[0,0,0],[2,2,2])])).size,26);
+assert.equal(op(draft([component('gable',[0,0,0],[4,2,2])])).size,15);
+assert.equal(op(draft([component('door',[0,0,0],[0,1,0])])).size,2);
+assert.throws(()=>op(draft([component('fill',[0,0,0],[255,255,255])])));
+assert.throws(()=>op(draft([component('execute',[0,0,0],[0,0,0])])));
+console.log('Portable viewer: 6 offline checks passed. Occupancy only, not authoritative block geometry.');

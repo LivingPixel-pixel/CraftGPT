@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CraftGPT Build Preview</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, Segoe UI, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #101416; color: #eef4ec; }
+    header { padding: 18px 22px; border-bottom: 1px solid #334039; background: #17201c; }
+    h1 { margin: 0 0 4px; font-size: 22px; color: #f5d76e; }
+    header p { margin: 0; color: #adbbb2; }
+    main { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 78px); }
+    aside { padding: 18px; border-right: 1px solid #334039; background: #151b18; }
+    section { padding: 14px; min-width: 0; }
+    label { display: block; margin: 0 0 14px; color: #c7d4cc; }
+    input[type=file], select, button { width: 100%; margin-top: 6px; padding: 9px; color: #eef4ec; background: #26332c; border: 1px solid #4b6255; border-radius: 5px; }
+    button { cursor: pointer; }
+    button:hover { background: #314238; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .meta { margin-top: 16px; padding: 12px; background: #202a25; border-radius: 6px; white-space: pre-wrap; color: #b9c7be; line-height: 1.45; }
+    .notice { margin-top: 12px; color: #f5d76e; }
+    canvas { display: block; width: 100%; height: calc(100vh - 108px); min-height: 480px; background: radial-gradient(circle at 50% 35%, #26322d, #0c0f0e 72%); border: 1px solid #334039; border-radius: 7px; }
+    @media (max-width: 820px) { main { grid-template-columns: 1fr; } aside { border-right: 0; } canvas { height: 65vh; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>CraftGPT local build preview</h1>
+  <p>Approximate occupancy preview, not Minecraft geometry or textures. Use Inspect solid model in the mod for accurate block shapes. Files stay in this tab.</p>
+</header>
+<main>
+  <aside>
+    <label>Area request<input id="requestFile" type="file" accept=".json,application/json"></label>
+    <label>Build result<input id="resultFile" type="file" accept=".json,application/json"></label>
+    <label>View<select id="mode"><option value="final">Final build</option><option value="changes">Generated changes only</option><option value="existing">Existing area</option></select></label>
+    <div class="row"><button id="left">Rotate left</button><button id="right">Rotate right</button></div>
+    <div class="row"><button id="zoomOut">Zoom out</button><button id="zoomIn">Zoom in</button></div>
+    <div id="meta" class="meta">Load request.craftgpt.json to begin.</div>
+    <div id="notice" class="notice"></div>
+  </aside>
+  <section><canvas id="canvas"></canvas></section>
+</main>
+<script>
+(() => {
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const meta = document.getElementById('meta');
+  const notice = document.getElementById('notice');
+  let request = null;
+  let result = null;
+  let rotation = 0;
+  let zoom = 1;
+
+  const read = (file, done) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try { done(JSON.parse(reader.result)); notice.textContent = ''; render(); }
+      catch (error) { notice.textContent = 'Could not read JSON: ' + error.message; }
+    };
+    reader.readAsText(file);
+  };
+
+  document.getElementById('requestFile').onchange = event => read(event.target.files[0], value => request = value);
+  document.getElementById('resultFile').onchange = event => read(event.target.files[0], value => result = value);
+  document.getElementById('mode').onchange = render;
+  document.getElementById('left').onclick = () => { rotation = (rotation + 3) % 4; render(); };
+  document.getElementById('right').onclick = () => { rotation = (rotation + 1) % 4; render(); };
+  document.getElementById('zoomIn').onclick = () => { zoom = Math.min(2.5, zoom * 1.2); render(); };
+  document.getElementById('zoomOut').onclick = () => { zoom = Math.max(0.35, zoom / 1.2); render(); };
+  window.onresize = render;
+
+  function parseEntries(text, palette) {
+    const map = new Map();
+    if (!text) return map;
+    for (const compact of text.split(';')) {
+      if (!compact) continue;
+      const p = compact.split(',').map(Number);
+      if (p.length === 4 && palette[p[3]]) map.set(p.slice(0, 3).join(','), palette[p[3]]);
+    }
+    return map;
+  }
+
+  // Approximate occupancy only. The mod remains the authoritative compiler and validator.
+  function operationMap(build) {
+    const map = new Map();
+    if (!build) return map;
+    if (!Array.isArray(build.palette) || !Array.isArray(build.operations)) throw Error('Invalid build');
+    const put=(x,y,z,state)=>{
+      if (![x,y,z].every(n=>Number.isSafeInteger(n)&&n>=0&&n<=255)||typeof state!=='string') throw Error('Invalid component block');
+      map.set([x,y,z].join(','),state);
+      if(map.size>10000)throw Error('Build exceeds preview limit');
+    };
+    const components=build.components||[];
+    if(!Array.isArray(components)||components.length>128)throw Error('Too many components');
+    let work=0;
+    for(const c of components) {
+      if(!Array.isArray(c.from)||!Array.isArray(c.to)||c.from.length!==3||c.to.length!==3)throw Error('Invalid bounds');
+      const [x0,y0,z0]=c.from,[x1,y1,z1]=c.to;
+      if(![...c.from,...c.to].every(n=>Number.isInteger(n)&&n>=0&&n<=255)||x1<x0||y1<y0||z1<z0)throw Error('Invalid bounds');
+      work+=(x1-x0+1)*(y1-y0+1)*(z1-z0+1);if(work>80000)throw Error('Component work limit');
+      const state=build.palette[c.paletteIndex];
+      if(c.kind==='door'){
+        if(x1!==x0||z1!==z0||y1!==y0+1)throw Error('Invalid door bounds');
+        put(x0,y0,z0,state);put(x0,y1,z0,state);
+      } else if(c.kind==='gable'){
+        if(c.axis!=='x'&&c.axis!=='z')throw Error('Invalid roof axis');
+        const alongX=c.axis==='x',span=alongX?z1-z0:x1-x0;
+        if(y1-y0<Math.floor(span/2))throw Error('Roof outside bounds');
+        for(let x=x0;x<=x1;x++)for(let z=z0;z<=z1;z++){
+          const offset=alongX?z-z0:x-x0;put(x,y0+Math.min(offset,span-offset),z,state);
+        }
+      } else if(c.kind==='fill'||c.kind==='shell'){
+        for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++)
+          if(c.kind==='fill'||x===x0||x===x1||y===y0||y===y1||z===z0||z===z1)put(x,y,z,state);
+      } else throw Error('Unknown component kind');
+    }
+    for (const compact of build.operations) {
+      const p=compact.split(',').map(Number);
+      if(p.length!==4)throw Error('Invalid operation');
+      put(p[0],p[1],p[2],build.palette[p[3]]);
+    }
+    return map;
+  }
+
+  function color(block) {
+    const known = {
+      air:'#000000', stone:'#7f8587', cobblestone:'#6f7476', oak:'#9a7445', spruce:'#66503a',
+      birch:'#d7c58b', deepslate:'#505257', brick:'#a65b4f', glass:'#9ed8df', copper:'#bd754d',
+      quartz:'#e8e4d7', terracotta:'#a96d52', concrete:'#9b9b96', wool:'#c9c9c9', gold:'#e8c44f',
+      iron:'#d7d7d0', grass:'#6f9d47', dirt:'#76513b', leaves:'#47783c', lantern:'#f0b84e'
+    };
+    const id = String(block).split('[')[0].split(':').pop();
+    for (const [key, value] of Object.entries(known)) if (id.includes(key)) return value;
+    let hash = 0; for (const ch of id) hash = ((hash << 5) - hash + ch.charCodeAt(0)) | 0;
+    return `hsl(${Math.abs(hash) % 360} 35% 55%)`;
+  }
+
+  function shade(hex, factor) {
+    if (!hex.startsWith('#')) return hex;
+    const n = parseInt(hex.slice(1), 16);
+    const c = shift => Math.max(0, Math.min(255, Math.round(((n >> shift) & 255) * factor)));
+    return `rgb(${c(16)},${c(8)},${c(0)})`;
+  }
+
+  function rotate(x, z, width, depth) {
+    if (rotation === 1) return [depth - 1 - z, x];
+    if (rotation === 2) return [width - 1 - x, depth - 1 - z];
+    if (rotation === 3) return [z, width - 1 - x];
+    return [x, z];
+  }
+
+  function render() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    if (!request || !request.areaContext) return;
+
+    const area = request.areaContext;
+    const exact = area.exactBlocks || { palette: [], blocks: '' };
+    const existing = parseEntries(exact.blocks, exact.palette || []);
+    const changes = result && result.review ? operationMap(request.currentBuild) : new Map();
+    for(const [p,state] of operationMap(result && result.build)) changes.set(p,state);
+    const mode = document.getElementById('mode').value;
+    const blocks = mode === 'changes' ? new Map(changes) : new Map(existing);
+    if (mode === 'final') {
+      for (const [position, state] of changes) {
+        if (state === 'minecraft:air') blocks.delete(position); else blocks.set(position, state);
+      }
+    }
+
+    const list = [];
+    for (const [position, state] of blocks) {
+      if (state === 'minecraft:air') continue;
+      const [x, y, z] = position.split(',').map(Number);
+      const [rx, rz] = rotate(x, z, area.width, area.depth);
+      list.push({ x: rx, y, z: rz, state, changed: changes.has(position) });
+    }
+    list.sort((a, b) => (a.x + a.z + a.y * 0.01) - (b.x + b.z + b.y * 0.01));
+
+    const span = Math.max(area.width + area.depth, area.height * 2, 8);
+    const tile = Math.max(3, Math.min(18, (Math.min(rect.width, rect.height) / span) * zoom));
+    const originX = rect.width / 2;
+    const originY = rect.height * 0.72;
+    for (const block of list) drawCube(originX + (block.x - block.z) * tile, originY + (block.x + block.z) * tile * 0.5 - block.y * tile, tile, block.state, block.changed);
+
+    const summary = result && result.build ? result.build.summary : 'No result loaded';
+    meta.textContent = `Area: ${area.width} x ${area.height} x ${area.depth}\nExisting: ${existing.size} blocks\nGenerated operations: ${changes.size}\nVisible in this view: ${list.length}\n\n${summary}`;
+    if (result && (result.requestId !== request.requestId || result.contextHash !== request.contextHash || result.instructionHash !== request.instructionHash)) {
+      notice.textContent = 'Warning: result identifiers do not match this request. Do not import it.';
+    }
+  }
+
+  function drawCube(x, y, size, state, changed) {
+    const half = size;
+    const height = size;
+    const base = color(state);
+    ctx.beginPath(); ctx.moveTo(x, y - height); ctx.lineTo(x + half, y - height / 2); ctx.lineTo(x, y); ctx.lineTo(x - half, y - height / 2); ctx.closePath();
+    ctx.fillStyle = shade(base, 1.12); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x - half, y - height / 2); ctx.lineTo(x, y); ctx.lineTo(x, y + height); ctx.lineTo(x - half, y + height / 2); ctx.closePath();
+    ctx.fillStyle = shade(base, 0.72); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x + half, y - height / 2); ctx.lineTo(x, y); ctx.lineTo(x, y + height); ctx.lineTo(x + half, y + height / 2); ctx.closePath();
+    ctx.fillStyle = shade(base, 0.88); ctx.fill();
+    if (changed) { ctx.strokeStyle = '#66f5ff'; ctx.lineWidth = Math.max(1, size * 0.08); ctx.stroke(); }
+  }
+})();
+</script>
+</body>
+</html>

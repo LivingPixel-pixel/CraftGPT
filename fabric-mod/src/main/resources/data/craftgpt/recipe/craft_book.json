@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " A ",
+    "RBR",
+    " A "
+  ],
+  "key": {
+    "A": "minecraft:amethyst_shard",
+    "B": "minecraft:book",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "craftgpt:craft_book",
+    "count": 1
+  }
+}

@@ -1,12 +1,25 @@
-# CraftGPT
+<p align="center">
+  <img src="docs/branding/craftgpt-logo.svg" width="160" height="160" alt="CraftGPT: a friendly robot face in a grass block">
+</p>
 
-Pick an area, describe what you want, and review the build before placing it.
+<h1 align="center">CraftGPT</h1>
 
-CraftGPT is a Fabric mod that lets you build with an AI assistant inside Minecraft. It takes the blocks in your selected area as context, turns your idea into a draft, and gives you a preview you can inspect and improve. You decide when it becomes part of your world.
+<p align="center"><strong>Describe a build. Preview it. Make it part of your world.</strong></p>
 
-**Current version: 0.19.0-alpha.4.** This is an experimental release. Start in a spare world and keep backups, especially before trying placement and undo on an existing build.
+<p align="center">
+  <a href="https://github.com/LivingPixel-pixel/CraftGPT/releases/tag/v0.19.0-alpha.4">Download the alpha</a> &middot;
+  <a href="#getting-started">Install and set up</a> &middot;
+  <a href="https://github.com/LivingPixel-pixel/CraftGPT/issues">Report a bug</a> &middot;
+  <a href="docs/RELEASE_0.19.0-alpha.4.md">Release notes</a>
+</p>
 
-[Download the alpha](https://github.com/LivingPixel-pixel/CraftGPT/releases/tag/v0.19.0-alpha.4) · [Report a bug](https://github.com/LivingPixel-pixel/CraftGPT/issues) · [Release notes](docs/RELEASE_0.19.0-alpha.4.md)
+<p align="center">Minecraft Java 26.1.2 &middot; Fabric &middot; Experimental alpha 0.19.0-alpha.4</p>
+
+CraftGPT is a Fabric mod for AI-assisted building inside Minecraft. Select an area, describe your idea in the CraftBook, and inspect the generated draft. Ask for changes, then place it when you are happy with it.
+
+Generation uses your locally installed, signed-in Codex CLI or a configured API provider. Account limits and API charges apply. There is no separate CraftGPT backend to set up.
+
+**This is an experimental alpha.** Start in a spare world and keep backups. Generated beds, chests and furnaces are not supported yet. See [what is still rough](#what-is-still-rough) before trying it in an existing world.
 
 ## What you can do
 

@@ -1,14 +1,14 @@
 package dev.craftgpt.client.ui;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.client.planning.PlanningController;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.client.renderer.texture.DynamicTexture;
 import com.mojang.blaze3d.platform.NativeImage;
-import net.minecraft.client.renderer.RenderPipelines;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -50,7 +50,7 @@ public final class BuildInspectionScreen extends Screen {
             try {
                 NativeImage image=NativeImage.read(bytes);
                 imageWidth=image.getWidth();imageHeight=image.getHeight();
-                minecraft.getTextureManager().register(textureId,new DynamicTexture(()->"CraftGPT inspection",image));
+                ClientPlatform.registerImage(minecraft, textureId, image);
                 loaded=true;message=Component.translatable("craftgpt.inspection.page",page+1,pages.size());
             }catch(Exception e){message=Component.translatable("craftgpt.inspection.failed");}
         }));
@@ -61,11 +61,11 @@ public final class BuildInspectionScreen extends Screen {
         if(loaded) {
             float scale=Math.min((width-20f)/imageWidth,(height-78f)/imageHeight);
             int w=(int)(imageWidth*scale),h=(int)(imageHeight*scale);
-            g.blit(RenderPipelines.GUI_TEXTURED,textureId,(width-w)/2,25,0f,0f,w,h,imageWidth,imageHeight,imageWidth,imageHeight);
+            ClientPlatform.drawImage(g,textureId,(width-w)/2,25,w,h,imageWidth,imageHeight);
         }
         g.centeredText(font,message,width/2,height-43,0xFFCCCCCC);
     }
     @Override public boolean isPauseScreen(){return false;}
-    @Override public void onClose(){minecraft.setScreen(parent);}
+    @Override public void onClose(){ClientPlatform.setScreen(minecraft, parent);}
     @Override public void removed(){closed=true;generation++;minecraft.getTextureManager().release(textureId);}
 }

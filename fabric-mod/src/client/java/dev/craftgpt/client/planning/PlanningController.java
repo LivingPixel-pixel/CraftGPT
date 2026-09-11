@@ -1,5 +1,7 @@
 package dev.craftgpt.client.planning;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.client.config.CraftGptConfig;
 import dev.craftgpt.client.config.CodexGenerationEffort;
 import dev.craftgpt.client.config.ContextMode;
@@ -228,23 +230,23 @@ public final class PlanningController {
     }
 
     public void openPlanning(Minecraft minecraft, String prefilledText) {
-        minecraft.setScreen(new IntentionPlanningScreen(null, this, prefilledText));
+        ClientPlatform.setScreen(minecraft, new IntentionPlanningScreen(null, this, prefilledText));
     }
 
     public void openVersions(Minecraft minecraft) {
-        minecraft.setScreen(new VersionHistoryScreen(null, this, null));
+        ClientPlatform.setScreen(minecraft, new VersionHistoryScreen(null, this, null));
     }
 
     public void openVersions(Minecraft minecraft, Screen parent, String selectedVersionId) {
-        minecraft.setScreen(new VersionHistoryScreen(parent, this, selectedVersionId));
+        ClientPlatform.setScreen(minecraft, new VersionHistoryScreen(parent, this, selectedVersionId));
     }
 
     public void openPreviewReview(Minecraft minecraft, Screen parent) {
-        minecraft.setScreen(new PreviewReviewScreen(parent, this));
+        ClientPlatform.setScreen(minecraft, new PreviewReviewScreen(parent, this));
     }
 
     public void openPlanReview(Minecraft minecraft, Screen parent) {
-        minecraft.setScreen(new PlanReviewScreen(parent, this));
+        ClientPlatform.setScreen(minecraft, new PlanReviewScreen(parent, this));
     }
 
     public void submit(Minecraft minecraft, String instruction) {
@@ -374,7 +376,7 @@ public final class PlanningController {
                         "craftgpt.planning.message.complete",
                         saved.activeVersion().id()
                     ));
-                    if (minecraft.screen instanceof IntentionPlanningScreen planningScreen) {
+                    if (ClientPlatform.screen(minecraft) instanceof IntentionPlanningScreen planningScreen) {
                         planningScreen.onPlanSaved();
                     }
                 } catch (IOException | RuntimeException exception) {
@@ -867,7 +869,7 @@ public final class PlanningController {
         codexEndedNanos = 0L;
         codexActivityEvents = 0;
         boolean started=beginVisualRefinementStep(minecraft,returnScreen);
-        if(started) minecraft.setScreen(new dev.craftgpt.client.ui.CodexGenerationScreen(returnScreen,this));
+        if(started) ClientPlatform.setScreen(minecraft, new dev.craftgpt.client.ui.CodexGenerationScreen(returnScreen,this));
         return started;
     }
 
@@ -985,7 +987,7 @@ public final class PlanningController {
             finishCodexActivity();
             setError("craftgpt.planning.error.stale_context");
             CraftGptSoundFeedback.error(minecraft);
-            minecraft.setScreen(returnScreen);
+            ClientPlatform.setScreen(minecraft, returnScreen);
             return;
         }
 
@@ -1283,10 +1285,10 @@ public final class PlanningController {
                 statusColor = 0xFF55FF55;
                 CraftGptSoundFeedback.complete(minecraft);
                 notifyPlayer(minecraft, Component.translatable("craftgpt.codex.message.ready"));
-            } else if (minecraft.screen instanceof PreviewReviewScreen reviewScreen) {
+            } else if (ClientPlatform.screen(minecraft) instanceof PreviewReviewScreen reviewScreen) {
                 reviewScreen.onBuildUpdated();
             } else if (allowsServerRequestedScreen(minecraft)) {
-                openPreviewReview(minecraft, minecraft.screen);
+                openPreviewReview(minecraft, ClientPlatform.screen(minecraft));
             }
         } else if (outcome == BuildWorkflowController.ValidationOutcome.REJECTED && codexPreviewPending) {
             codexPreviewPending = false;
@@ -1495,13 +1497,13 @@ public final class PlanningController {
 
     public void handlePlacementHistory(Minecraft minecraft, PlacementHistoryPayload payload) {
         if (placementWorkflow.handleHistory(payload)
-            && minecraft.screen instanceof PlacementHistoryScreen historyScreen) {
+            && ClientPlatform.screen(minecraft) instanceof PlacementHistoryScreen historyScreen) {
             historyScreen.onHistoryUpdated();
         }
     }
 
     public void openPlacementHistory(Minecraft minecraft, Screen parent) {
-        minecraft.setScreen(new PlacementHistoryScreen(parent, this));
+        ClientPlatform.setScreen(minecraft, new PlacementHistoryScreen(parent, this));
     }
 
     public void refreshPlacementHistory() {
@@ -1840,7 +1842,7 @@ public final class PlanningController {
 
     private void notifyPlayer(Minecraft minecraft, Component message) {
         if (minecraft.player != null) {
-            minecraft.player.sendSystemMessage(message);
+            ClientPlatform.notifyPlayer(minecraft, message);
         }
     }
 
@@ -1864,7 +1866,7 @@ public final class PlanningController {
 
     private void openServerRequestedPreview(Minecraft minecraft) {
         if (allowsServerRequestedScreen(minecraft)) {
-            openPreviewReview(minecraft, minecraft.screen);
+            openPreviewReview(minecraft, ClientPlatform.screen(minecraft));
         } else {
             status = Component.translatable("craftgpt.build.status.review_ready");
             statusColor = 0xFFFFFF55;
@@ -1872,12 +1874,12 @@ public final class PlanningController {
     }
 
     private boolean allowsServerRequestedScreen(Minecraft minecraft) {
-        return minecraft.screen == null
-            || minecraft.screen instanceof ChatScreen
-            || minecraft.screen instanceof IntentionPlanningScreen
-            || minecraft.screen instanceof PlanReviewScreen
-            || minecraft.screen instanceof VersionHistoryScreen
-            || minecraft.screen instanceof PreviewReviewScreen;
+        return ClientPlatform.screen(minecraft) == null
+            || ClientPlatform.screen(minecraft) instanceof ChatScreen
+            || ClientPlatform.screen(minecraft) instanceof IntentionPlanningScreen
+            || ClientPlatform.screen(minecraft) instanceof PlanReviewScreen
+            || ClientPlatform.screen(minecraft) instanceof VersionHistoryScreen
+            || ClientPlatform.screen(minecraft) instanceof PreviewReviewScreen;
     }
 
     private String safeFailureMessage(Throwable throwable) {

@@ -1,0 +1,65 @@
+{
+  "1.20.1": {
+    "minecraft": "1.20.1",
+    "api": "0.92.12+1.20.1",
+    "loader": "0.18.4",
+    "java": 21,
+    "platform": "1.20.1",
+    "testedLoader": "0.19.5",
+    "testedApi": "0.92.12+1.20.1"
+  },
+  "1.21.1": {
+    "minecraft": "1.21.1",
+    "api": "0.116.17+1.21.1",
+    "loader": "0.18.4",
+    "java": 21,
+    "platform": "1.21.1",
+    "testedLoader": "0.19.5",
+    "testedApi": "0.116.17+1.21.1"
+  },
+  "1.21.11": {
+    "minecraft": "1.21.11",
+    "api": "0.141.6+1.21.11",
+    "loader": "0.18.4",
+    "java": 21,
+    "platform": "1.21.11",
+    "testedLoader": "0.19.5",
+    "testedApi": "0.141.6+1.21.11"
+  },
+  "26.1": {
+    "minecraft": "26.1",
+    "api": "0.154.0+26.1.2",
+    "loader": "0.19.3",
+    "java": 25,
+    "platform": "26.1",
+    "testedLoader": "0.19.5",
+    "testedApi": "0.155.3+26.1.2"
+  },
+  "26.1.1": {
+    "minecraft": "26.1.1",
+    "api": "0.154.0+26.1.2",
+    "loader": "0.19.3",
+    "java": 25,
+    "platform": "26.1",
+    "testedLoader": "0.19.5",
+    "testedApi": "0.155.3+26.1.2"
+  },
+  "26.1.2": {
+    "minecraft": "26.1.2",
+    "api": "0.154.0+26.1.2",
+    "loader": "0.19.3",
+    "java": 25,
+    "platform": "26.1",
+    "testedLoader": "0.19.5",
+    "testedApi": "0.155.3+26.1.2"
+  },
+  "26.2": {
+    "minecraft": "26.2",
+    "api": "0.160.0+26.2",
+    "loader": "0.19.3",
+    "java": 25,
+    "platform": "26.2",
+    "testedLoader": "0.19.5",
+    "testedApi": "0.160.0+26.2"
+  }
+}

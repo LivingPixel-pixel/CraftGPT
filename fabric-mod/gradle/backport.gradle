@@ -1,0 +1,94 @@
+// Only mechanical API renames belong here. Behaviour differences use platform adapters.
+def renames = [
+    'net.minecraft.client.resources.model.geometry.BakedQuad': 'net.minecraft.client.renderer.block.model.BakedQuad',
+    'net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents': 'net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents',
+    'CreativeModeTabEvents.modifyOutputEvent': 'ItemGroupEvents.modifyEntriesEvent',
+    'PayloadTypeRegistry.clientboundPlay()': 'PayloadTypeRegistry.playS2C()',
+    'PayloadTypeRegistry.serverboundPlay()': 'PayloadTypeRegistry.playC2S()',
+    'net.fabricmc.fabric.api.client.rendering.v1.level.LevelRender': 'net.fabricmc.fabric.api.client.rendering.v1.world.WorldRender',
+    'LevelRenderContext': 'WorldRenderContext',
+    'LevelRenderEvents': 'WorldRenderEvents',
+    '.levelState()': '.worldState()',
+    'GuiGraphicsExtractor': 'GuiGraphics',
+    'extractRenderState(': 'render(',
+    'extractBackground(': 'renderBackground('
+]
+
+def oldTransport = providers.gradleProperty('mcTarget').get() in ['1.21.1', '1.20.1']
+if (oldTransport) {
+    renames.putAll([
+        'net.minecraft.network.RegistryFriendlyByteBuf': 'net.minecraft.network.FriendlyByteBuf',
+        'RegistryFriendlyByteBuf': 'FriendlyByteBuf',
+        'net.minecraft.network.codec.StreamCodec': 'dev.craftgpt.compat.network.StreamCodec',
+        'net.minecraft.network.codec.ByteBufCodecs': 'dev.craftgpt.compat.network.ByteBufCodecs',
+        'net.minecraft.network.protocol.common.custom.CustomPacketPayload': 'dev.craftgpt.compat.network.CustomPacketPayload',
+        'net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry': 'dev.craftgpt.compat.network.PayloadTypeRegistry',
+        'net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking': 'dev.craftgpt.compat.network.ServerPlayNetworking',
+        'net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking': 'dev.craftgpt.compat.network.ClientPlayNetworking',
+        'BlockPos.STREAM_CODEC': 'ByteBufCodecs.BLOCK_POS',
+        'Identifier': 'ResourceLocation',
+        '.identifier()': '.location()',
+        '.lookupOrThrow(Registries.BLOCK)': '.registryOrThrow(Registries.BLOCK)',
+        'import net.minecraft.server.permissions.Permissions;': '',
+        'player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)': 'player.hasPermissions(2)',
+        'player.level();': 'player.serverLevel();',
+        'player.nameAndId()': 'player.getGameProfile()',
+        'getMinY()': 'getMinBuildHeight()',
+        'TagParser.parseCompoundFully(': 'TagParser.parseTag(',
+        'BlockStateParser.parseForBlock(blockRegistry,': 'BlockStateParser.parseForBlock(blockRegistry.asLookup(),',
+        'BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK,': 'BlockStateParser.parseForBlock(BuiltInRegistries.BLOCK.asLookup(),',
+        '.addFormatter(': '.setFormatter(',
+        'properties.setId(key)': 'properties',
+        'Block.UPDATE_SKIP_ON_PLACE': '0',
+        'Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS': '0',
+        'level.setBlock(position, replacement, UPDATE_FLAGS)': 'dev.craftgpt.compat.placement.PlacementScope.setBlock(level, position, replacement, UPDATE_FLAGS)',
+        'public InteractionResult use(Level level, Player player, InteractionHand hand)': 'public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand)',
+        'return InteractionResult.SUCCESS_SERVER;': 'return net.minecraft.world.InteractionResultHolder.success(player.getItemInHand(hand));',
+        'return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS;': 'return level.isClientSide() ? net.minecraft.world.InteractionResultHolder.success(player.getItemInHand(hand)) : net.minecraft.world.InteractionResultHolder.pass(player.getItemInHand(hand));',
+        'net.minecraft.client.renderer.rendertype.RenderTypes': 'net.minecraft.client.renderer.RenderType',
+        'net.minecraft.client.renderer.rendertype.RenderType': 'net.minecraft.client.renderer.RenderType',
+        'RenderTypes.': 'RenderType.',
+        'net.fabricmc.fabric.api.client.rendering.v1.world.': 'net.fabricmc.fabric.api.client.rendering.v1.'
+    ])
+}
+
+def oldest = providers.gradleProperty('mcTarget').get() == '1.20.1'
+if (oldest) {
+    renames.putAll([
+        'net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(': 'dev.craftgpt.compat.network.NativeNetwork.id(',
+        'net.minecraft.resources.ResourceLocation.parse(': 'dev.craftgpt.compat.network.NativeNetwork.parse(',
+        'ResourceLocation.fromNamespaceAndPath(': 'dev.craftgpt.compat.network.NativeNetwork.id(',
+        'ResourceLocation.parse(': 'dev.craftgpt.compat.network.NativeNetwork.parse(',
+        '.saveWithFullMetadata(level.registryAccess())': '.saveWithFullMetadata()',
+        'BlockEntity.loadStatic(position, replacement, tag, level.registryAccess())': 'BlockEntity.loadStatic(position, replacement, tag)',
+        'BlockEntity.loadStatic(position, before, tag, level.registryAccess())': 'BlockEntity.loadStatic(position, before, tag)',
+        'restored.isValidBlockState(': 'restored.getType().isValid(',
+        '@Override public void renderBackground(GuiGraphics g,int x,int y,float delta)': 'public void renderBackground(GuiGraphics g,int x,int y,float delta)',
+        'super.renderBackground(g,x,y,delta)': 'super.renderBackground(g)',
+        'ConfirmLinkScreen.confirmLinkNow(s,MODEL_GUIDE)': 'ConfirmLinkScreen.confirmLinkNow(MODEL_GUIDE.toString(),s,true)',
+        'ConfirmLinkScreen.confirmLinkNow(this,CraftBookScreen.MODEL_GUIDE)': 'ConfirmLinkScreen.confirmLinkNow(CraftBookScreen.MODEL_GUIDE.toString(),this,true)',
+        '.withColor(0x55FFFF)': '.withStyle(net.minecraft.ChatFormatting.AQUA)'
+    ])
+}
+
+['main', 'client', 'test'].each { name ->
+    def sources = sourceSets[name].java.srcDirs.toList()
+    def output = layout.buildDirectory.dir("generated/backport/${name}")
+    def generate = tasks.register("prepare${name.capitalize()}Backport", Sync) {
+        from(sources)
+        if (oldest && name == 'main') exclude('dev/craftgpt/item/CraftGptItems.java', 'dev/craftgpt/item/CraftBookItem.java')
+        into(output)
+        filteringCharset = 'UTF-8'
+        inputs.property('renames', renames)
+        inputs.file('gradle/backport.gradle')
+        filter { line ->
+            renames.each { oldName, newName -> line = line.replace(oldName, newName) }
+            line = line.replaceAll(/\b(g|graphics)\.text\(/, '$1.drawString(')
+            line = line.replaceAll(/\b(g|graphics)\.centeredText\(/, '$1.drawCenteredString(')
+            line
+        }
+    }
+    sourceSets[name].java.setSrcDirs([output])
+    tasks.named(sourceSets[name].compileJavaTaskName).configure { dependsOn(generate) }
+    tasks.matching { it.name == 'sourcesJar' }.configureEach { dependsOn(generate) }
+}

@@ -1,13 +1,29 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'net.fabricmc.fabric-loom' version "${loom_version}" apply false
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
     id 'maven-publish'
 }
+
+def targets = new groovy.json.JsonSlurper().parse(file('versions.json'))
+def releasePolicy = new groovy.json.JsonSlurper().parse(file('release-policy.json'))
+def targetId = providers.gradleProperty('mcTarget').getOrElse(releasePolicy.primaryMinecraft)
+if (!targets.containsKey(targetId)) {
+    throw new GradleException("Unknown mcTarget '${targetId}'. Choose one of: ${targets.keySet().join(', ')}")
+}
+def target = targets[targetId]
+def legacy = targetId.startsWith('1.')
+apply plugin: legacy ? 'net.fabricmc.fabric-loom-remap' : 'net.fabricmc.fabric-loom'
+def profile = providers.gradleProperty('fabricProfile').getOrElse('baseline')
+if (!(profile in ['baseline', 'current'])) throw new GradleException('fabricProfile must be baseline or current')
+def apiVersion = providers.gradleProperty('fabricApi').getOrElse(profile == 'current' ? target.testedApi : target.api)
+def loaderVersion = providers.gradleProperty('fabricLoader').getOrElse(profile == 'current' ? target.testedLoader : target.loader)
+layout.buildDirectory = layout.projectDirectory.dir("build/${targetId}${profile == 'baseline' ? '' : '/current'}")
 
 version = project.mod_version
 group = project.maven_group
 
 base {
-    archivesName = project.archives_base_name
+    archivesName = "${project.archives_base_name}-mc${targetId}"
 }
 
 loom {
@@ -21,48 +37,138 @@ loom {
     }
 }
 
+sourceSets.client.java.srcDir("src/platform/${target.platform}/client/java")
+sourceSets.client.java.srcDir("src/platform/models/${legacy ? targetId : '26'}/client/java")
+if (legacy) {
+    apply from: 'gradle/backport.gradle'
+}
+def oldTransport = targetId in ['1.21.1', '1.20.1']
+if (oldTransport) {
+    sourceSets.main.java.srcDirs('src/native/legacy/main/java', "src/native/${targetId}/main/java")
+    sourceSets.client.java.srcDirs('src/native/legacy/client/java', "src/native/${targetId}/client/java")
+    sourceSets.test.java.srcDirs('src/native/legacy/test/java', "src/native/${targetId}/test/java")
+    sourceSets.main.resources.srcDir('src/native/legacy/main/resources')
+}
+
 dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    minecraft "com.mojang:minecraft:${target.minecraft}"
+    if (legacy) {
+        mappings loom.officialMojangMappings()
+        modImplementation "net.fabricmc:fabric-loader:${loaderVersion}"
+        modImplementation "net.fabricmc.fabric-api:fabric-api:${apiVersion}"
+    } else {
+        implementation "net.fabricmc:fabric-loader:${loaderVersion}"
+        implementation "net.fabricmc.fabric-api:fabric-api:${apiVersion}"
+    }
     testImplementation platform('org.junit:junit-bom:5.12.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    if (oldTransport) testRuntimeOnly "net.fabricmc:fabric-loader-junit:${loaderVersion}"
 }
 
 processResources {
-    inputs.property 'version', project.version
+    def metadata = [version: project.version, minecraft: target.minecraft,
+                    loader: target.loader, java: target.java, fabric_api: target.api,
+                    mixins: oldTransport ? '["craftgpt-legacy.mixins.json"]' : '[]']
+    inputs.properties metadata
 
     filesMatching('fabric.mod.json') {
-        expand 'version': inputs.properties.version
+        expand metadata
+        filter { line -> line.replace('"mixins": []', '"mixins": ' + metadata.mixins) }
+    }
+    if (oldTransport) {
+        filesMatching('data/craftgpt/recipe/craft_book.json') {
+            if (targetId == '1.20.1') path = path.replace('/recipe/', '/recipes/')
+            filter { line ->
+                line = line.replaceAll(/"([ABR])": "(minecraft:[^"]+)"/, '"$1": {"item": "$2"}')
+                targetId == '1.20.1' ? line.replace('"id": "craftgpt:craft_book"', '"item": "craftgpt:craft_book"') : line
+            }
+        }
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.release = 25
+    options.release = target.java as int
     options.encoding = 'UTF-8'
     options.compilerArgs.add('-Xlint:deprecation')
 }
 
 java {
     withSourcesJar()
-    sourceCompatibility = JavaVersion.VERSION_25
-    targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.toVersion(target.java)
+    targetCompatibility = JavaVersion.toVersion(target.java)
 }
 
 test {
     useJUnitPlatform()
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(target.java as int)
+    }
 }
 
 def releaseDirectory = rootProject.layout.projectDirectory.dir("../releases/${project.version}")
+def productionJar = tasks.named(legacy ? 'remapJar' : 'jar')
+
+tasks.register('verifyReleaseJar') {
+    dependsOn productionJar
+    inputs.file(productionJar.flatMap { it.archiveFile })
+    doLast {
+        def archive = productionJar.get().archiveFile.get().asFile
+        new java.util.zip.ZipFile(archive).withCloseable { zip ->
+            def descriptor = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
+            if (descriptor.version != project.version.toString() || descriptor.depends.minecraft != target.minecraft ||
+                descriptor.depends.java != ">=${target.java}" || descriptor.depends.fabricloader != ">=${target.loader}" ||
+                descriptor.depends['fabric-api'] != ">=${target.api}") {
+                throw new GradleException("Incorrect dependency metadata in ${archive.name}")
+            }
+            ['dev/craftgpt/CraftGptMod.class', 'dev/craftgpt/client/CraftGptClient.class',
+             'dev/craftgpt/client/platform/ClientPlatform.class', 'dev/craftgpt/client/platform/ModelPlatform.class',
+             'dev/craftgpt/client/platform/PreviewPlatform.class'].each { path ->
+                def entry = zip.getEntry(path)
+                if (entry == null) throw new GradleException("Missing ${path} in ${archive.name}")
+                zip.getInputStream(entry).withCloseable { stream ->
+                    def data = new DataInputStream(stream)
+                    data.readInt(); data.readUnsignedShort()
+                    if (data.readUnsignedShort() != (target.java as int) + 44) {
+                        throw new GradleException("Incorrect Java bytecode target in ${path}")
+                    }
+                }
+            }
+            if (oldTransport && (descriptor.mixins != ['craftgpt-legacy.mixins.json'] ||
+                zip.getEntry('dev/craftgpt/compat/mixin/LevelChunkPlacementMixin.class') == null)) {
+                throw new GradleException('Legacy placement safeguards are missing from the release JAR')
+            }
+            def recipeDirectory = targetId == '1.20.1' ? 'recipes' : 'recipe'
+            def recipeEntry = zip.getEntry("data/craftgpt/${recipeDirectory}/craft_book.json")
+            if (recipeEntry == null) throw new GradleException('CraftBook recipe is in the wrong resource directory')
+            def recipe = new groovy.json.JsonSlurper().parse(zip.getInputStream(recipeEntry))
+            def resultKey = targetId == '1.20.1' ? 'item' : 'id'
+            if (recipe.result[resultKey] != 'craftgpt:craft_book' || recipe.key.any { key, ingredient ->
+                oldTransport ? !(ingredient instanceof Map && ingredient.item instanceof String) : !(ingredient instanceof String)
+            }) throw new GradleException('CraftBook recipe uses an incompatible format')
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyReleaseJar') }
 
 tasks.register('packageRelease', Copy) {
     dependsOn tasks.named('build')
+    doFirst {
+        if (targetId != releasePolicy.primaryMinecraft && !(project.version.toString() ==~ /\d+\.0\.0(?:[-+].*)?/)) {
+            throw new GradleException('Other Minecraft versions are packaged only for major releases, such as 1.0.0 or 2.0.0.')
+        }
+        if (profile != 'baseline' || apiVersion != target.api || loaderVersion != target.loader) {
+            throw new GradleException('Package releases with the baseline Fabric dependencies. Use test build for other profiles.')
+        }
+    }
     into(releaseDirectory)
-    from(tasks.named('jar').flatMap { it.archiveFile }) {
-        rename { "CraftGPT-${project.version}-mc${project.minecraft_version}.jar" }
+    from(productionJar.flatMap { it.archiveFile }) {
+        rename { "CraftGPT-${project.version}-mc${targetId}.jar" }
     }
     doLast {
+        def artifact = releaseDirectory.file("CraftGPT-${project.version}-mc${targetId}.jar").asFile
+        def digest = java.security.MessageDigest.getInstance('SHA-256').digest(artifact.bytes).encodeHex().toString()
+        new File(artifact.path + '.sha256').setText("${digest}  ${artifact.name}\n", 'UTF-8')
         logger.lifecycle("CraftGPT release copied to ${releaseDirectory.asFile}")
     }
 }

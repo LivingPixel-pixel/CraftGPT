@@ -1,13 +1,8 @@
 package dev.craftgpt.client.build.preview;
 
-import dev.craftgpt.build.server.BuildPreviewValidator;
+import dev.craftgpt.client.platform.ModelPlatform;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.geom.builders.UVPair;
-import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
-import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.util.RandomSource;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import javax.imageio.ImageIO;
@@ -31,40 +26,20 @@ public final class MinecraftModelSnapshot implements BuildVisualSheetRenderer.Te
         return snapshot;
     }
     public static List<BakedQuad> baked(Minecraft mc,String serialized) {
-        try {
-            var state=BuildPreviewValidator.parseCanonicalState(BuiltInRegistries.BLOCK,serialized);
-            var model=mc.getModelManager().getBlockStateModelSet().get(state);
-            List<BlockStateModelPart> parts=new ArrayList<>();
-            model.collectParts(RandomSource.create(42),parts);
-            List<BakedQuad> quads=new ArrayList<>();
-            for(var part:parts) {
-                quads.addAll(part.getQuads(null));
-                for(Direction direction:Direction.values()) quads.addAll(part.getQuads(direction));
-            }
-            return List.copyOf(quads);
-        } catch(Exception e) { return List.of(); }
+        return ModelPlatform.baked(mc, serialized);
     }
     public static MinecraftModelSnapshot capture(Minecraft mc,Collection<String> states) {
         Map<String,List<Quad>> models=new HashMap<>();
         for(String serialized:new LinkedHashSet<>(states)) {
             List<Quad> quads=new ArrayList<>();
             for(BakedQuad q:baked(mc,serialized)) {
-                var sprite=q.materialInfo().sprite();
-                float du=sprite.getU1()-sprite.getU0(),dv=sprite.getV1()-sprite.getV0();
+                var sprite=ModelPlatform.sprite(q);
                 List<Vertex> vertices=new ArrayList<>();
                 for(int i=0;i<4;i++) {
-                    var p=q.position(i); long uv=q.packedUV(i);
-                    vertices.add(new Vertex(p.x(),p.y(),p.z(),(UVPair.unpackU(uv)-sprite.getU0())/du,
-                        (UVPair.unpackV(uv)-sprite.getV0())/dv));
+                    vertices.add(ModelPlatform.vertex(q, i));
                 }
-                int tint=0xFFFFFF;
-                if(q.materialInfo().isTinted()) {
-                    try {
-                        var state=BuildPreviewValidator.parseCanonicalState(BuiltInRegistries.BLOCK,serialized);
-                        tint=mc.getBlockColors().getTintSource(state,q.materialInfo().tintIndex()).color(state);
-                    } catch(Exception ignored) { }
-                }
-                float shade=switch(q.direction()) {case UP->1f;case DOWN->.55f;case NORTH,SOUTH->.8f;default->.9f;};
+                int tint=ModelPlatform.tint(mc, serialized, q);
+                float shade=ModelPlatform.shade(q);
                 quads.add(new Quad(List.copyOf(vertices),sprite.contents().name(),tint,shade));
             }
             models.put(serialized,List.copyOf(quads));

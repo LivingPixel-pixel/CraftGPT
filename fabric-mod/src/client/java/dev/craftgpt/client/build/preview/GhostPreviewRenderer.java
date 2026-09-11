@@ -2,6 +2,8 @@ package dev.craftgpt.client.build.preview;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import dev.craftgpt.client.platform.PreviewPlatform;
+import dev.craftgpt.client.platform.ModelPlatform;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -45,7 +47,7 @@ final class GhostPreviewRenderer {
             return;
         }
 
-        Vec3 cameraPosition = context.levelState().cameraRenderState.pos;
+        Vec3 cameraPosition = PreviewPlatform.cameraPosition(context);
         if (cameraPosition == null) {
             manager.updateFrameStats(snapshot, true, 0, 0, 0, 0);
             return;
@@ -53,7 +55,7 @@ final class GhostPreviewRenderer {
 
         double effectiveDistance = effectiveRenderDistance(minecraft);
         double maxDistanceSquared = effectiveDistance * effectiveDistance;
-        Frustum frustum = context.levelState().cameraRenderState.cullFrustum;
+        Frustum frustum = PreviewPlatform.frustum(context);
         List<VisibleBatch> visibleBatches = new ArrayList<>(snapshot.batches().size());
         int distanceCulled = 0;
         int frustumCulled = 0;
@@ -72,9 +74,9 @@ final class GhostPreviewRenderer {
         // When the frame cap is reached, nearby sections are always preferred.
         visibleBatches.sort(Comparator.comparingDouble(VisibleBatch::distanceSquared));
 
-        PoseStack poseStack = context.poseStack();
-        RenderType renderType = RenderTypes.linesTranslucent();
-        VertexConsumer vertices = context.bufferSource().getBuffer(renderType);
+        PoseStack poseStack = PreviewPlatform.poses(context);
+        RenderType renderType = PreviewPlatform.lineType();
+        SOLID_TYPES.add(renderType);
         int rendered = 0;
         int capOmitted = 0;
 
@@ -88,15 +90,14 @@ final class GhostPreviewRenderer {
                         break outer;
                     }
                     if(!manager.solid() || block.removal() || !renderSolid(context,poseStack,block,minecraft))
-                        renderBlock(poseStack, context.bufferSource().getBuffer(renderType), block);
+                        PreviewPlatform.draw(context, poseStack, renderType,
+                            (pose, vertices) -> renderBlock(pose, vertices, block));
                     rendered++;
                 }
             }
         } finally {
             poseStack.popPose();
-            // This buffer is added after vanilla's translucent features; flush it here.
-            context.bufferSource().endBatch(renderType);
-            for(var type:SOLID_TYPES) context.bufferSource().endBatch(type);
+            PreviewPlatform.finish(context, SOLID_TYPES);
             SOLID_TYPES.clear();
         }
 
@@ -115,33 +116,23 @@ final class GhostPreviewRenderer {
     }
 
     private static boolean renderSolid(LevelRenderContext context,PoseStack poses,PreviewBlock block,Minecraft mc) {
-        Object current=mc.getModelManager().getBlockStateModelSet();
+        Object current=ModelPlatform.modelSet(mc);
         if(current!=modelSet) {MODEL_CACHE.clear();modelSet=current;}
         var quads=MODEL_CACHE.computeIfAbsent(block.state(),s->MinecraftModelSnapshot.baked(mc,s));
         if(quads.isEmpty())return false;
         poses.pushPose(); poses.translate(block.x(),block.y(),block.z());
-        com.mojang.blaze3d.vertex.QuadInstance instance=new com.mojang.blaze3d.vertex.QuadInstance();
-        instance.setLightCoords(0xF000F0);
-        instance.setOverlayCoords(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
         for(var quad:quads) {
-            int tint=0xFFFFFFFF;
-            if(quad.materialInfo().isTinted()) try {
-                var state=dev.craftgpt.build.server.BuildPreviewValidator.parseCanonicalState(net.minecraft.core.registries.BuiltInRegistries.BLOCK,block.state());
-                tint=mc.getBlockColors().getTintSource(state,quad.materialInfo().tintIndex()).color(state)|0xFF000000;
-            } catch(Exception ignored) { }
-            instance.setColor(tint);
-            instance.scaleColor(switch(quad.direction()){case UP->1f;case DOWN->.55f;case NORTH,SOUTH->.8f;default->.9f;});
-            var type=quad.materialInfo().layer().translucent()
-                ? RenderTypes.entityTranslucent(quad.materialInfo().sprite().atlasLocation())
-                : RenderTypes.entityCutout(quad.materialInfo().sprite().atlasLocation());
+            int tint=ModelPlatform.tint(mc, block.state(), quad);
+            var type=ModelPlatform.renderType(quad);
             SOLID_TYPES.add(type);
-            context.bufferSource().getBuffer(type).putBakedQuad(poses.last(),quad,instance);
+            PreviewPlatform.draw(context, poses, type,
+                (pose, vertices) -> ModelPlatform.emit(vertices, pose, quad, tint));
         }
         poses.popPose();
         return true;
     }
 
-    private static void renderBlock(PoseStack poseStack, VertexConsumer vertices, PreviewBlock block) {
+    private static void renderBlock(PoseStack.Pose poseStack, VertexConsumer vertices, PreviewBlock block) {
         if (block.removal()) {
             renderBox(poseStack, vertices, block, 0.11F, REMOVAL_COLOR, REMOVAL_LINE_WIDTH);
             renderRemovalDiagonals(poseStack, vertices, block);
@@ -152,7 +143,7 @@ final class GhostPreviewRenderer {
 
     /** Emits the twelve box edges directly, avoiding per-edge vector allocations every frame. */
     private static void renderBox(
-        PoseStack poseStack,
+        PoseStack.Pose poseStack,
         VertexConsumer vertices,
         PreviewBlock block,
         float inset,
@@ -183,7 +174,7 @@ final class GhostPreviewRenderer {
     }
 
     private static void renderRemovalDiagonals(
-        PoseStack poseStack,
+        PoseStack.Pose poseStack,
         VertexConsumer vertices,
         PreviewBlock block
     ) {
@@ -205,7 +196,7 @@ final class GhostPreviewRenderer {
     }
 
     private static void line(
-        PoseStack poseStack,
+        PoseStack.Pose poseStack,
         VertexConsumer vertices,
         float fromX,
         float fromY,
@@ -223,16 +214,10 @@ final class GhostPreviewRenderer {
         float normalX = dx * inverseLength;
         float normalY = dy * inverseLength;
         float normalZ = dz * inverseLength;
-        PoseStack.Pose pose = poseStack.last();
+        PoseStack.Pose pose = poseStack;
 
-        vertices.addVertex(pose, fromX, fromY, fromZ)
-            .setColor(color)
-            .setNormal(pose, normalX, normalY, normalZ)
-            .setLineWidth(lineWidth);
-        vertices.addVertex(pose, toX, toY, toZ)
-            .setColor(color)
-            .setNormal(pose, normalX, normalY, normalZ)
-            .setLineWidth(lineWidth);
+        PreviewPlatform.lineVertex(vertices, pose, fromX, fromY, fromZ, color, normalX, normalY, normalZ, lineWidth);
+        PreviewPlatform.lineVertex(vertices, pose, toX, toY, toZ, color, normalX, normalY, normalZ, lineWidth);
     }
 
     private static double effectiveRenderDistance(Minecraft minecraft) {

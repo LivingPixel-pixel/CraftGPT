@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
+import dev.craftgpt.client.platform.PreviewPlatform;
 import net.minecraft.world.phys.AABB;
 
 /**
@@ -43,7 +43,7 @@ public final class GhostPreviewManager {
      */
     public void register() {
         if (rendererRegistered.compareAndSet(false, true)) {
-            LevelRenderEvents.AFTER_TRANSLUCENT_FEATURES.register(GhostPreviewRenderer::render);
+            PreviewPlatform.register(GhostPreviewRenderer::render);
         }
     }
 

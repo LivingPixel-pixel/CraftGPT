@@ -1,4 +1,6 @@
 package dev.craftgpt.client.ui;
+
+import dev.craftgpt.client.platform.ClientPlatform;
 import dev.craftgpt.client.build.preview.GhostPreviewStats;
 import dev.craftgpt.client.build.storage.BuildArtifactSnapshot;
 import dev.craftgpt.client.planning.PlanningController;
@@ -22,17 +24,17 @@ public final class PreviewReviewScreen extends FocusedScreen {
         build=controller.activeBuild();
         if(!placementStatusRequested){placementStatusRequested=true;controller.refreshPlacementStatus();}
         place=action(primaryLabel(),frame().row(96,1,0),b->primaryAction());
-        inspect=action("craftgpt.ui.inspect",124,2,0,b->minecraft.setScreen(new BuildInspectionScreen(this,controller)));
-        iterate=action("craftgpt.preview.iterate_simple",124,2,1,b->minecraft.setScreen(
+        inspect=action("craftgpt.ui.inspect",124,2,0,b->ClientPlatform.setScreen(minecraft, new BuildInspectionScreen(this,controller)));
+        iterate=action("craftgpt.preview.iterate_simple",124,2,1,b->ClientPlatform.setScreen(minecraft,
             new IntentionPlanningScreen(this,controller,Component.translatable("craftgpt.preview.iteration_prompt").getString())));
-        more=action("craftgpt.ui.tools",154,2,0,b->minecraft.setScreen(new PreviewOptionsScreen(this,controller)));
-        detailsButton=action("craftgpt.ui.details",154,2,1,b->minecraft.setScreen(new StatusDetailsScreen(this,this::details)));
-        action(Component.translatable("craftgpt.preview.continue_playing"),frame().footer(1,0),b->minecraft.setScreen(null));
+        more=action("craftgpt.ui.tools",154,2,0,b->ClientPlatform.setScreen(minecraft, new PreviewOptionsScreen(this,controller)));
+        detailsButton=action("craftgpt.ui.details",154,2,1,b->ClientPlatform.setScreen(minecraft, new StatusDetailsScreen(this,this::details)));
+        action(Component.translatable("craftgpt.preview.continue_playing"),frame().footer(1,0),b->ClientPlatform.setScreen(minecraft, null));
         tick();
     }
     public void onBuildUpdated() {
         build=controller.activeBuild();incompleteCoverageConfirmed=false;
-        if(minecraft!=null&&minecraft.screen==this) rebuildWidgets();
+        if(minecraft!=null&&ClientPlatform.screen(minecraft)==this) rebuildWidgets();
     }
     @Override public void tick() {
         var current=controller.activeBuild();
@@ -91,5 +93,5 @@ public final class PreviewReviewScreen extends FocusedScreen {
     }
     private boolean visible(GhostPreviewStats s){return s.hasPreview()&&s.visible()&&s.dimensionMatches();}
     private boolean complete(GhostPreviewStats s){return visible(s)&&s.validOperations()>0&&s.renderCapOmittedOperations()==0;}
-    @Override public void onClose(){minecraft.setScreen(parent);}
+    @Override public void onClose(){ClientPlatform.setScreen(minecraft, parent);}
 }

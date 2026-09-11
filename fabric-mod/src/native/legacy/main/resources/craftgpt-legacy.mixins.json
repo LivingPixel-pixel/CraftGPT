@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "package": "dev.craftgpt.compat.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["LevelChunkPlacementMixin"],
+  "client": ["ParticleEngineAccessor"],
+  "injectors": {"defaultRequire": 1}
+}

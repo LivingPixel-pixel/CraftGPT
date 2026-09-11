@@ -194,8 +194,8 @@ public final class AreaContextExtractor {
 
     private static String canonicalBlockState(String blockId, BlockState state) {
         StringBuilder canonical = new StringBuilder(blockId);
-        List<Property.Value<?>> values = state.getValues()
-            .sorted(Comparator.comparing(value -> value.property().getName()))
+        List<Property<?>> values = state.getProperties().stream()
+            .sorted(Comparator.comparing(Property::getName))
             .toList();
         if (!values.isEmpty()) {
             canonical.append('[');
@@ -203,12 +203,16 @@ public final class AreaContextExtractor {
                 if (index > 0) {
                     canonical.append(',');
                 }
-                Property.Value<?> value = values.get(index);
-                canonical.append(value.property().getName()).append('=').append(value.valueName());
+                Property<?> property = values.get(index);
+                canonical.append(property.getName()).append('=').append(propertyValue(state, property));
             }
             canonical.append(']');
         }
         return canonical.toString();
+    }
+
+    private static <T extends Comparable<T>> String propertyValue(BlockState state, Property<T> property) {
+        return property.getName(state.getValue(property));
     }
 
     private static String dominantBlock(Map<String, Integer> counts) {

@@ -1,4 +1,6 @@
 package dev.craftgpt.client.ui;
+
+import dev.craftgpt.client.platform.ClientPlatform;
 import dev.craftgpt.client.planning.PlanningController;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
@@ -31,5 +33,5 @@ final class ReviewFindingsScreen extends Screen {
         for(int i=page*count();i<Math.min(lines.size(),(page+1)*count());i++)g.text(font,lines.get(i),16,40+(i-page*count())*12,0xffeeeeee);
     }
     @Override public boolean isPauseScreen(){return false;}
-    @Override public void onClose(){minecraft.setScreen(parent);}
+    @Override public void onClose(){ClientPlatform.setScreen(minecraft, parent);}
 }

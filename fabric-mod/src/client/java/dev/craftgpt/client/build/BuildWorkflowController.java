@@ -1,5 +1,7 @@
 package dev.craftgpt.client.build;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.build.model.CompiledBuildArtifact;
 import dev.craftgpt.client.api.ApiCallMetrics;
 import dev.craftgpt.client.api.ApiCallResult;
@@ -513,7 +515,7 @@ public final class BuildWorkflowController {
 
     private void notifyPlayer(Minecraft minecraft, Component message) {
         if (minecraft.player != null) {
-            minecraft.player.sendSystemMessage(message);
+            ClientPlatform.notifyPlayer(minecraft, message);
         }
     }
 

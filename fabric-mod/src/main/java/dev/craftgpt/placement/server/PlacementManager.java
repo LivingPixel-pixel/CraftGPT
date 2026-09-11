@@ -740,12 +740,8 @@ public enum PlacementManager {
                 }
                 if (change.hasBlockEntityData()) {
                     CompoundTag tag = TagParser.parseCompoundFully(change.beforeBlockEntityNbt());
-                    BlockEntity restored = BlockEntity.loadStatic(
-                        new BlockPos(change.x(), change.y(), change.z()),
-                        before,
-                        tag,
-                        level.registryAccess()
-                    );
+                    BlockPos position = new BlockPos(change.x(), change.y(), change.z());
+                    BlockEntity restored = BlockEntity.loadStatic(position, before, tag, level.registryAccess());
                     if (restored == null || !restored.isValidBlockState(before)) {
                         throw new UnsafePlacementException(PlacementStatusCodes.BLOCK_ENTITY_UNSAFE);
                     }

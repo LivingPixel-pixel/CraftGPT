@@ -1,4 +1,6 @@
 package dev.craftgpt.client.ui;
+
+import dev.craftgpt.client.platform.ClientPlatform;
 import dev.craftgpt.client.planning.PlanningController;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.*;
@@ -43,5 +45,5 @@ final class PartImprovementScreen extends Screen {
     }
     @Override public boolean isPauseScreen(){return false;}
     @Override public void tick(){if(submit!=null)submit.active=target.isPresent()&&!prompt.getValue().isBlank()&&controller.canVisualReview();}
-    @Override public void onClose(){minecraft.setScreen(parent);}
+    @Override public void onClose(){ClientPlatform.setScreen(minecraft, parent);}
 }

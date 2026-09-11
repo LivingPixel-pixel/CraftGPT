@@ -1,5 +1,7 @@
 package dev.craftgpt.client.ui;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.client.api.ApiCallMetrics;
 import dev.craftgpt.client.api.ApiCostEstimate;
 import dev.craftgpt.client.planning.PlanningController;
@@ -65,17 +67,17 @@ public final class PlanReviewScreen extends Screen {
 
         int third=(contentWidth-16)/3;
         codexButton=addRenderableWidget(Button.builder(Component.translatable("craftgpt.codex.build_short"),button->{
-            if(controller.startCodexBuildCurrentPlan(minecraft))minecraft.setScreen(new CodexGenerationScreen(parent,controller));
+            if(controller.startCodexBuildCurrentPlan(minecraft))ClientPlatform.setScreen(minecraft, new CodexGenerationScreen(parent,controller));
         }).bounds(left,actionsY,third,20).build());
         addRenderableWidget(Button.builder(Component.translatable("craftgpt.ui.tools"),button->
-            minecraft.setScreen(new ActionMenuScreen(this,"craftgpt.ui.plan_tools","craftgpt.ui.tools_hint",List.of(
+            ClientPlatform.setScreen(minecraft, new ActionMenuScreen(this,"craftgpt.ui.plan_tools","craftgpt.ui.tools_hint",List.of(
                 ActionMenuScreen.Entry.of("craftgpt.plan_review.revise",()->!controller.requestInFlight(),
-                    screen->minecraft.setScreen(new IntentionPlanningScreen(screen,controller,""))),
+                    screen->ClientPlatform.setScreen(minecraft, new IntentionPlanningScreen(screen,controller,""))),
                 ActionMenuScreen.Entry.of("craftgpt.planning.versions",()->!controller.requestInFlight(),
                     screen->controller.openVersions(minecraft,screen,null)),
                 ActionMenuScreen.Entry.of("craftgpt.plan_review.generate_api",()->controller.currentPlanMatchesContext()&&!controller.requestInFlight(),
                     screen->UiMenus.confirm(screen,"craftgpt.plan_review.generate_api","craftgpt.ui.api_charge",()->{
-                        minecraft.setScreen(new PreviewReviewScreen(this,controller));controller.compilePreview(minecraft);
+                        ClientPlatform.setScreen(minecraft, new PreviewReviewScreen(this,controller));controller.compilePreview(minecraft);
                     })))))).bounds(left+third+8,actionsY,third,20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.close"),button->onClose())
             .bounds(left+2*(third+8),actionsY,contentWidth-2*(third+8),20).build());
@@ -115,7 +117,7 @@ public final class PlanReviewScreen extends Screen {
 
     @Override
     public void onClose() {
-        minecraft.setScreen(parent);
+        ClientPlatform.setScreen(minecraft, parent);
     }
 
     @Override

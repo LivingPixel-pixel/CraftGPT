@@ -1,4 +1,6 @@
 package dev.craftgpt.client.ui;
+
+import dev.craftgpt.client.platform.ClientPlatform;
 import dev.craftgpt.client.codex.CodexGenerationStage;
 import dev.craftgpt.client.planning.PlanningController;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -19,21 +21,21 @@ public final class CodexGenerationScreen extends FocusedScreen {
         String primary=rendered.active()?"craftgpt.codex.screen.play":
             c.activeBuild().isPresent()?"craftgpt.codex.screen.review":"craftgpt.codex.screen.back";
         action(primary,132,1,0,b->{
-            if(c.codexStage().active())minecraft.setScreen(null);
-            else if(c.activeBuild().isPresent())minecraft.setScreen(new PreviewReviewScreen(parent,c));
-            else minecraft.setScreen(parent);
+            if(c.codexStage().active())ClientPlatform.setScreen(minecraft, null);
+            else if(c.activeBuild().isPresent())ClientPlatform.setScreen(minecraft, new PreviewReviewScreen(parent,c));
+            else ClientPlatform.setScreen(minecraft, parent);
         });
-        action("craftgpt.codex.screen.chat",160,2,0,b->minecraft.setScreen(new CodexChatScreen(this,c)));
-        action("craftgpt.ui.activity",160,2,1,b->minecraft.setScreen(UiMenus.activity(this,c)));
+        action("craftgpt.codex.screen.chat",160,2,0,b->ClientPlatform.setScreen(minecraft, new CodexChatScreen(this,c)));
+        action("craftgpt.ui.activity",160,2,1,b->ClientPlatform.setScreen(minecraft, UiMenus.activity(this,c)));
         action(Component.translatable(rendered.active()?"craftgpt.codex.screen.cancel":"gui.back"),
             frame().footer(1,0),b->{
                 if(c.codexStage().active())UiMenus.confirm(this,"craftgpt.codex.screen.cancel",
                     "craftgpt.ui.cancel_hint",()->{c.cancelCodexGeneration();rebuildWidgets();});
-                else minecraft.setScreen(parent);
+                else ClientPlatform.setScreen(minecraft, parent);
             });
     }
     @Override public void tick(){if(rendered!=c.codexStage())rebuildWidgets();}
-    @Override public void onClose(){minecraft.setScreen(null);}
+    @Override public void onClose(){ClientPlatform.setScreen(minecraft, null);}
     @Override public void extractRenderState(GuiGraphicsExtractor g,int x,int y,float d){
         super.extractRenderState(g,x,y,d);heading(g);
         Component headline=rendered==CodexGenerationStage.REVIEWING&&c.visualRefinementStep()>0

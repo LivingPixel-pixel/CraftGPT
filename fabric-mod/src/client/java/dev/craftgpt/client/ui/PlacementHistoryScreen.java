@@ -1,5 +1,7 @@
 package dev.craftgpt.client.ui;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.client.planning.PlanningController;
 import dev.craftgpt.network.PlacementRecoveryRequestPayload;
 import dev.craftgpt.placement.PlacementStatusCodes;
@@ -98,7 +100,7 @@ public final class PlacementHistoryScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.translatable("craftgpt.history.tools"), button -> {
             PlacementHistoryEntry selected = selectedEntry();
-            if (selected != null) minecraft.setScreen(new RecoveryToolsScreen(this, controller, selected));
+            if (selected != null) ClientPlatform.setScreen(minecraft, new RecoveryToolsScreen(this, controller, selected));
         }).bounds(left, top + 172, half, 20).build()).active = selectedEntry() != null;
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
             .bounds(left + half + 6, top + 172, contentWidth - half - 6, 20).build());
@@ -112,7 +114,7 @@ public final class PlacementHistoryScreen extends Screen {
             selectedPlacementId = null;
         }
         confirmationAction = null;
-        if (minecraft != null && minecraft.screen == this) {
+        if (minecraft != null && ClientPlatform.screen(minecraft) == this) {
             rebuildWidgets();
         }
     }
@@ -173,7 +175,7 @@ public final class PlacementHistoryScreen extends Screen {
 
     @Override
     public void onClose() {
-        minecraft.setScreen(parent);
+        ClientPlatform.setScreen(minecraft, parent);
     }
 
     @Override

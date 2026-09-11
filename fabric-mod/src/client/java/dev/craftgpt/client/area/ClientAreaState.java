@@ -63,7 +63,7 @@ public final class ClientAreaState {
             && GhostPreviewManager.INSTANCE.isVisible();
         if (suppressForPreview) {
             if (!previewVisualizationSuppressed) {
-                minecraft.particleEngine.clearParticles();
+                dev.craftgpt.client.platform.ClientPlatform.clearParticles(minecraft);
                 previewVisualizationSuppressed = true;
             }
             return;

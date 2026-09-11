@@ -1,5 +1,7 @@
 package dev.craftgpt.client;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.client.area.ClientAreaState;
 import dev.craftgpt.client.config.CraftGptConfig;
 import dev.craftgpt.client.build.preview.GhostPreviewManager;
@@ -80,8 +82,8 @@ public final class CraftGptClient implements ClientModInitializer {
             if (payload.open()) {
                 context.client().execute(() -> {
                     Minecraft minecraft = Minecraft.getInstance();
-                    if (minecraft.screen == null || minecraft.screen instanceof ChatScreen) {
-                        minecraft.setScreen(new CraftGptSettingsScreen(minecraft.screen, config));
+                    if (ClientPlatform.screen(minecraft) == null || ClientPlatform.screen(minecraft) instanceof ChatScreen) {
+                        ClientPlatform.setScreen(minecraft, new CraftGptSettingsScreen(ClientPlatform.screen(minecraft), config));
                     }
                 });
             }
@@ -91,8 +93,8 @@ public final class CraftGptClient implements ClientModInitializer {
             if (payload.open()) {
                 context.client().execute(() -> {
                     Minecraft minecraft = Minecraft.getInstance();
-                    if (minecraft.screen == null || minecraft.screen instanceof ChatScreen) {
-                        minecraft.setScreen(new CraftBookScreen(minecraft.screen, planningController, config));
+                    if (ClientPlatform.screen(minecraft) == null || ClientPlatform.screen(minecraft) instanceof ChatScreen) {
+                        ClientPlatform.setScreen(minecraft, new CraftBookScreen(ClientPlatform.screen(minecraft), planningController, config));
                     }
                 });
             }

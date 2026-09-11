@@ -7,14 +7,15 @@
   "authors": ["CraftGPT contributors"],
   "license": "MIT",
   "environment": "*",
+  "mixins": [],
   "entrypoints": {
     "main": ["dev.craftgpt.CraftGptMod"],
     "client": ["dev.craftgpt.client.CraftGptClient"]
   },
   "depends": {
-    "fabricloader": ">=0.19.3",
-    "minecraft": "~26.1.2",
-    "java": ">=25",
-    "fabric-api": "*"
+    "fabricloader": ">=${loader}",
+    "minecraft": "${minecraft}",
+    "java": ">=${java}",
+    "fabric-api": ">=${fabric_api}"
   }
 }

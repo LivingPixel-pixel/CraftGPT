@@ -1,5 +1,7 @@
 package dev.craftgpt.client.ui;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.client.planning.PlanningController;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -56,7 +58,7 @@ public final class CodexLogScreen extends Screen {
 
         addRenderableWidget(Button.builder(
             Component.translatable("craftgpt.codex.log.back"),
-            button -> minecraft.setScreen(parent)
+            button -> ClientPlatform.setScreen(minecraft, parent)
         ).bounds(left, height - 26, third, 20).build());
         addRenderableWidget(Button.builder(
             Component.translatable("craftgpt.codex.log.open"),
@@ -83,7 +85,7 @@ public final class CodexLogScreen extends Screen {
 
     @Override
     public void onClose() {
-        minecraft.setScreen(parent);
+        ClientPlatform.setScreen(minecraft, parent);
     }
 
     @Override

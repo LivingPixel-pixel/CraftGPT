@@ -1,5 +1,7 @@
 package dev.craftgpt.client.ui;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.area.AreaCommands;
 import dev.craftgpt.build.BuildLimits;
 import dev.craftgpt.client.config.CraftGptConfig;
@@ -301,7 +303,7 @@ public final class AdvancedSettingsScreen extends FocusedScreen {
 
     @Override
     public void onClose() {
-        minecraft.setScreen(parent);
+        ClientPlatform.setScreen(minecraft, parent);
     }
 
     @Override public void extractRenderState(GuiGraphicsExtractor g,int x,int y,float d){

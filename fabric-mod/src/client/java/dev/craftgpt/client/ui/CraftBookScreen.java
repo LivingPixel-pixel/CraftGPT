@@ -1,4 +1,6 @@
 package dev.craftgpt.client.ui;
+
+import dev.craftgpt.client.platform.ClientPlatform;
 import dev.craftgpt.client.area.ClientAreaState;
 import dev.craftgpt.client.config.CraftGptConfig;
 import dev.craftgpt.client.planning.PlanningController;
@@ -26,10 +28,10 @@ public final class CraftBookScreen extends FocusedScreen {
     @Override protected void init(){
         primary=action(primaryLabel(),frame().row(82,1,0),b->runPrimary());
         action("craftgpt.ui.tools",116,2,0,b->openTools());
-        action("craftgpt.book.settings",116,2,1,b->minecraft.setScreen(new SettingsHomeScreen(this,config)));
-        action("craftgpt.book.help",150,1,0,b->minecraft.setScreen(new ActionMenuScreen(this,
+        action("craftgpt.book.settings",116,2,1,b->ClientPlatform.setScreen(minecraft, new SettingsHomeScreen(this,config)));
+        action("craftgpt.book.help",150,1,0,b->ClientPlatform.setScreen(minecraft, new ActionMenuScreen(this,
             "craftgpt.book.help","craftgpt.ui.help_hint",List.of(
-                of("craftgpt.ui.workflow",()->true,s->minecraft.setScreen(new StatusDetailsScreen(s,()->Component.translatable("craftgpt.ui.workflow_help")))),
+                of("craftgpt.ui.workflow",()->true,s->ClientPlatform.setScreen(minecraft, new StatusDetailsScreen(s,()->Component.translatable("craftgpt.ui.workflow_help")))),
                 of("craftgpt.book.models_link",()->true,s->ConfirmLinkScreen.confirmLinkNow(s,MODEL_GUIDE))))));
         action(Component.translatable("gui.close"),frame().footer(1,0),b->onClose());tick();
     }
@@ -38,7 +40,7 @@ public final class CraftBookScreen extends FocusedScreen {
             (!c.requestInFlight()&&ClientPlayNetworking.canSend(CraftBookActionPayload.TYPE));}
     }
     private void openTools(){
-        minecraft.setScreen(new ActionMenuScreen(this,"craftgpt.ui.tools","craftgpt.ui.book_tools_hint",List.of(
+        ClientPlatform.setScreen(minecraft, new ActionMenuScreen(this,"craftgpt.ui.tools","craftgpt.ui.book_tools_hint",List.of(
             new ActionMenuScreen.Entry(()->Component.translatable(ClientAreaState.INSTANCE.started()?"craftgpt.book.area.finish":
                 ClientAreaState.INSTANCE.complete()?"craftgpt.book.area.clear":"craftgpt.book.area.start"),
                 ()->!c.requestInFlight()&&ClientPlayNetworking.canSend(CraftBookActionPayload.TYPE),s->runAreaAction(s)),
@@ -47,10 +49,10 @@ public final class CraftBookScreen extends FocusedScreen {
             of("craftgpt.book.history",()->!c.requestInFlight(),s->send(CraftBookActionPayload.HISTORY)))));
     }
     private void runPrimary(){
-        if(c.codexStage().active())minecraft.setScreen(new CodexGenerationScreen(this,c));
+        if(c.codexStage().active())ClientPlatform.setScreen(minecraft, new CodexGenerationScreen(this,c));
         else if(!ClientAreaState.INSTANCE.complete())runAreaAction(this);
         else if(c.activeForCurrentArea().isEmpty())send(CraftBookActionPayload.PLAN);
-        else if(c.activeBuild().isEmpty())minecraft.setScreen(new PlanReviewScreen(this,c));
+        else if(c.activeBuild().isEmpty())ClientPlatform.setScreen(minecraft, new PlanReviewScreen(this,c));
         else if(!c.activeBuildPlaced())send(CraftBookActionPayload.PREVIEW);
         else send(CraftBookActionPayload.HISTORY);
     }
@@ -62,7 +64,7 @@ public final class CraftBookScreen extends FocusedScreen {
     }
     private void send(String action){
         if(!ClientPlayNetworking.canSend(CraftBookActionPayload.TYPE)){CraftGptSoundFeedback.error(minecraft);return;}
-        try{ClientPlayNetworking.send(new CraftBookActionPayload(action));minecraft.setScreen(null);CraftGptSoundFeedback.page(minecraft);}
+        try{ClientPlayNetworking.send(new CraftBookActionPayload(action));ClientPlatform.setScreen(minecraft, null);CraftGptSoundFeedback.page(minecraft);}
         catch(RuntimeException e){CraftGptSoundFeedback.error(minecraft);}
     }
     private Component primaryLabel(){
@@ -81,5 +83,5 @@ public final class CraftBookScreen extends FocusedScreen {
             !c.activeBuildPlaced()?"craftgpt.ui.ready_hint":"craftgpt.ui.placed_hint";
         wrapped(g,Component.translatable(key),36,3,TEXT);
     }
-    @Override public void onClose(){minecraft.setScreen(parent);}
+    @Override public void onClose(){ClientPlatform.setScreen(minecraft, parent);}
 }

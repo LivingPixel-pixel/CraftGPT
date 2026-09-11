@@ -1,5 +1,7 @@
 package dev.craftgpt.client.ui;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.client.planning.PlanningController;
 import dev.craftgpt.client.planning.model.PlanVersion;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -116,9 +118,9 @@ public final class VersionHistoryScreen extends Screen {
 
     private void returnToParent() {
         if (parent != null) {
-            minecraft.setScreen(parent);
+            ClientPlatform.setScreen(minecraft, parent);
         } else {
-            minecraft.setScreen(new IntentionPlanningScreen(null, controller, ""));
+            ClientPlatform.setScreen(minecraft, new IntentionPlanningScreen(null, controller, ""));
         }
     }
 

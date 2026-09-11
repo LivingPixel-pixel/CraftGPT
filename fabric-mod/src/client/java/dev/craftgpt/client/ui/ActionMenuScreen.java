@@ -1,4 +1,6 @@
 package dev.craftgpt.client.ui;
+
+import dev.craftgpt.client.platform.ClientPlatform;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -43,5 +45,5 @@ final class ActionMenuScreen extends FocusedScreen {
     @Override public void extractRenderState(GuiGraphicsExtractor g,int x,int y,float d) {
         super.extractRenderState(g,x,y,d);heading(g);wrapped(g,description,34,2,MUTED);
     }
-    @Override public void onClose() { minecraft.setScreen(parent); }
+    @Override public void onClose() { ClientPlatform.setScreen(minecraft, parent); }
 }

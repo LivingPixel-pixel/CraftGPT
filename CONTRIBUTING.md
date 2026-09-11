@@ -24,7 +24,11 @@ cd fabric-mod
 node tools/test-portable-viewer.cjs
 ```
 
-On Windows, use `gradlew.bat` instead. Node.js is only needed for the portable-preview check.
+On Windows, use `gradlew.bat` instead. Node.js is only needed for the portable-preview check. The default target is Minecraft **26.1.2**, our primary v1 development version.
+
+Work on features and regular fixes in the primary version. Ports to other Minecraft versions are shipped at major releases only. Do not turn every small change into a multi-version release. Routine CI checks the primary version with both baseline and current pinned Fabric dependencies. The full matrix is a manual workflow option for major releases.
+
+For a major release, install both JDK 21 and JDK 25 and follow [COMPATIBILITY.md](docs/COMPATIBILITY.md). Version adapters belong in `src/platform/` and `src/native/`; keep generation, validation and placement rules shared. Never broaden the Minecraft dependency range to avoid making a real port.
 
 The saved-incident replay test is intentionally skipped unless local fixture paths are supplied. Do not commit those private fixtures to make it pass.
 

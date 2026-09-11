@@ -40,7 +40,8 @@ class BuildFunctionalChecksTest {
         var result=BuildFunctionalChecks.check(Map.of(BlockPos.ZERO,Blocks.AIR.defaultBlockState()),p->original.getOrDefault(p,Blocks.AIR.defaultBlockState()),BlockPos.ZERO);
         assertTrue(result.stream().anyMatch(p->p.code().equals("unsupported_door")));
     }
-    @Test void sculptureIsNotForcedToHaveAHouseFloor(){
-        assertTrue(check(Map.of(new BlockPos(2,4,1),Blocks.WHITE_CONCRETE.defaultBlockState())).isEmpty());
+    @Test void sculptureIsNotForcedToHaveAHouseFloor() throws Exception {
+        assertTrue(check(Map.of(new BlockPos(2,4,1), BuildPreviewValidator.parseCanonicalState(
+            net.minecraft.core.registries.BuiltInRegistries.BLOCK, "minecraft:white_concrete"))).isEmpty());
     }
 }

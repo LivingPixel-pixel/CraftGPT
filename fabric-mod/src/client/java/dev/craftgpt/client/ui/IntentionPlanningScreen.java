@@ -1,4 +1,6 @@
 package dev.craftgpt.client.ui;
+
+import dev.craftgpt.client.platform.ClientPlatform;
 import dev.craftgpt.client.planning.PlanningController;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
@@ -19,26 +21,24 @@ public final class IntentionPlanningScreen extends FocusedScreen {
     }
     @Override protected void init(){
         var f=frame();
-        promptBox=MultiLineEditBox.builder().setX(f.left()).setY(f.top()+70)
-            .setPlaceholder(Component.translatable("craftgpt.planning.placeholder"))
-            .setShowBackground(true).setShowDecorations(false)
-            .build(font,f.width(),62,Component.translatable("craftgpt.planning.input"));
+        promptBox=ClientPlatform.promptBox(font, f.left(), f.top()+70, f.width(), 62,
+            Component.translatable("craftgpt.planning.placeholder"), Component.translatable("craftgpt.planning.input"));
         promptBox.setCharacterLimit(8000);promptBox.setValue(draft);
         promptBox.setValueListener(value->{draft=value;updateState();});
         addRenderableWidget(promptBox);
         build=action("craftgpt.ui.build_codex",142,1,0,b->{
-            if(c.startCodexBuild(minecraft,draft))minecraft.setScreen(new CodexGenerationScreen(parent,c));
+            if(c.startCodexBuild(minecraft,draft))ClientPlatform.setScreen(minecraft, new CodexGenerationScreen(parent,c));
             updateState();
         });
         build.setTooltip(Tooltip.create(Component.translatable("craftgpt.codex.build_with_model",
             c.codexModel(),c.codexReasoningLevel(),c.codexGenerationEffort())));
-        action(Component.translatable("craftgpt.ui.tools"),f.footer(2,0),b->minecraft.setScreen(new PlanningToolsScreen(this,c)));
+        action(Component.translatable("craftgpt.ui.tools"),f.footer(2,0),b->ClientPlatform.setScreen(minecraft, new PlanningToolsScreen(this,c)));
         action(Component.translatable("gui.back"),f.footer(2,1),b->onClose());
         setInitialFocus(promptBox);updateState();
     }
     private void updateState(){if(build!=null)build.active=!draft.isBlank()&&c.currentContext().isPresent()&&!c.requestInFlight();}
     String draftText(){return draft;}
-    void submitApi(){c.submit(minecraft,draft);minecraft.setScreen(this);updateState();}
+    void submitApi(){c.submit(minecraft,draft);ClientPlatform.setScreen(minecraft, this);updateState();}
     Component details(){
         return Component.empty().append(c.status()).append("\n\n")
             .append(Component.translatable("craftgpt.ui.api_estimate"))
@@ -54,7 +54,7 @@ public final class IntentionPlanningScreen extends FocusedScreen {
         line(g,status.getString().isBlank()?Component.translatable("craftgpt.ui.preview_safe"):status,174,
             status.getString().isBlank()?MUTED:c.statusColor());
     }
-    public void onPlanSaved(){draft="";if(minecraft!=null&&minecraft.screen==this)minecraft.setScreen(new PlanReviewScreen(parent,c));}
-    public void onVersionChanged(){if(minecraft!=null&&minecraft.screen==this)rebuildWidgets();}
-    @Override public void onClose(){minecraft.setScreen(parent);}
+    public void onPlanSaved(){draft="";if(minecraft!=null&&ClientPlatform.screen(minecraft)==this)ClientPlatform.setScreen(minecraft, new PlanReviewScreen(parent,c));}
+    public void onVersionChanged(){if(minecraft!=null&&ClientPlatform.screen(minecraft)==this)rebuildWidgets();}
+    @Override public void onClose(){ClientPlatform.setScreen(minecraft, parent);}
 }

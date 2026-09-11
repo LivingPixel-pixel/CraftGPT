@@ -1,5 +1,7 @@
 package dev.craftgpt.client.ui;
 
+import dev.craftgpt.client.platform.ClientPlatform;
+
 import dev.craftgpt.client.planning.PlanningController;
 import dev.craftgpt.network.PlacementMaintenanceRequestPayload;
 import dev.craftgpt.placement.model.PlacementHistoryEntry;
@@ -90,7 +92,7 @@ public final class RecoveryToolsScreen extends Screen {
     }
 
     @Override
-    public void onClose() { minecraft.setScreen(parent); }
+    public void onClose() { ClientPlatform.setScreen(minecraft, parent); }
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {

@@ -4,6 +4,7 @@
 /fabric-mod/.gradle/
 /fabric-mod/build/
 /fabric-mod/run/
+/fabric-mod/logs/
 
 # Editors and local tooling.
 **/.idea/

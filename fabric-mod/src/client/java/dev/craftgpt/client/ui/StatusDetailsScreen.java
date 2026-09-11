@@ -1,4 +1,6 @@
 package dev.craftgpt.client.ui;
+
+import dev.craftgpt.client.platform.ClientPlatform;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -24,5 +26,5 @@ final class StatusDetailsScreen extends FocusedScreen {
         for(int i=0;i<11&&page*11+i<lines.size();i++)
             g.text(font,lines.get(page*11+i),frame().left(),frame().top()+34+i*11,TEXT,false);
     }
-    @Override public void onClose() { minecraft.setScreen(parent); }
+    @Override public void onClose() { ClientPlatform.setScreen(minecraft, parent); }
 }

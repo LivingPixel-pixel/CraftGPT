@@ -13,7 +13,9 @@
   <a href="docs/RELEASE_0.19.0-alpha.4.md">Release notes</a>
 </p>
 
-<p align="center">Minecraft Java 26.1.2 &middot; Fabric &middot; Experimental alpha 0.19.0-alpha.4</p>
+<p align="center">Minecraft Java 26.1.2 &middot; Fabric &middot; v1 development</p>
+
+**v1 is the development baseline.** Day-to-day improvements target Minecraft **26.1.2**. Other Minecraft versions receive ports at major releases. The public download above is still **0.19.0-alpha.4**; the v1 candidate has not been published. See the [version and release policy](docs/COMPATIBILITY.md).
 
 CraftGPT is a Fabric mod for AI-assisted building inside Minecraft. Select an area, describe your idea in the CraftBook, and inspect the generated draft. Ask for changes, then place it when you are happy with it.
 
@@ -82,7 +84,7 @@ The main workflow is implemented, but build quality varies. More review rounds c
 - Generated block entities are currently blocked. This includes real beds, chests and furnaces. The prompts require the model to disclose that limitation instead of passing off wool furniture or a stone cube as a working survival block.
 - The textured inspection renderer is not an exact copy of the in-game view. Lighting, animated textures, special renderers and some resource packs can differ.
 - The optional browser preview is approximate. Use the in-game inspection when judging materials and block shapes.
-- The latest offline check passed 221 tests and six preview checks. One test uses a private local replay fixture and is skipped in a fresh checkout. Live testing across worlds, resource packs and server setups is still needed.
+- Automated checks cover generation, validation, placement logic and the portable preview. One test uses a private local replay fixture and is skipped in a fresh checkout. Live testing across worlds, resource packs and server setups is still needed.
 - Model access, generation time and reliability depend on the selected provider and account.
 
 Please do not rely on undo as your only backup. The [live test checklist](docs/LIVE_TESTS_0.19.0-alpha.1.md) covers the cases that still need hands-on testing.
@@ -97,7 +99,7 @@ API keys are stored locally in `config/craftgpt/client-secrets.properties`. Trea
 
 ## Building from source
 
-Install JDK 25, then run from `fabric-mod`:
+Install JDK 25, then run from `fabric-mod`. These commands build the primary Minecraft **26.1.2** version:
 
 ```powershell
 .\gradlew.bat test build
@@ -109,13 +111,23 @@ On Linux or macOS:
 ./gradlew test build
 ```
 
-The first build downloads dependencies. The JAR is written to `fabric-mod/build/libs/`.
+The first build downloads dependencies. The primary JAR is written to `fabric-mod/build/26.1.2/libs/`.
 
 To copy a versioned JAR into the separate release folder:
 
 ```powershell
 .\gradlew.bat packageRelease
 ```
+
+The v1 candidate is copied to `releases/1.0.0/CraftGPT-1.0.0-mc26.1.2.jar`, alongside a SHA-256 checksum. Packaging does not publish a GitHub release.
+
+For a major release port, select an exact Minecraft target, for example:
+
+```powershell
+.\gradlew.bat test packageRelease "-PmcTarget=1.20.1"
+```
+
+Minecraft 1.x targets also require an installed **JDK 21**, including 1.20.1. Follow the [compatibility build instructions](docs/COMPATIBILITY.md) for the full release matrix and Fabric dependency checks.
 
 The small portable-preview check needs Node.js:
 

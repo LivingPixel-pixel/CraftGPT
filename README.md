@@ -7,21 +7,23 @@
 <p align="center"><strong>Describe a build. Preview it. Make it part of your world.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/LivingPixel-pixel/CraftGPT/releases/tag/v0.19.0-alpha.4">Download the alpha</a> &middot;
+  <a href="https://github.com/LivingPixel-pixel/CraftGPT/releases/tag/v1.0.0">Download v1 prerelease</a> &middot;
   <a href="#getting-started">Install and set up</a> &middot;
   <a href="https://github.com/LivingPixel-pixel/CraftGPT/issues">Report a bug</a> &middot;
-  <a href="docs/RELEASE_0.19.0-alpha.4.md">Release notes</a>
+  <a href="docs/RELEASE_1.0.0.md">Release notes</a>
 </p>
 
-<p align="center">Minecraft Java 26.1.2 &middot; Fabric &middot; v1 development</p>
+<p align="center">Minecraft Java 26.1.2 &middot; Fabric &middot; v1.0.0 experimental prerelease</p>
 
-**v1 is the development baseline.** Day-to-day improvements target Minecraft **26.1.2**. Other Minecraft versions receive ports at major releases. The public download above is still **0.19.0-alpha.4**; the v1 candidate has not been published. See the [version and release policy](docs/COMPATIBILITY.md).
+**Released without extensive in-game testing.** Automated builds and tests passed, but gameplay, dedicated servers, resource packs, modpack compatibility and world recovery have not been extensively verified. Use a disposable world and keep backups. The v1 label marks our development baseline, not a stability guarantee.
+
+Day-to-day improvements target Minecraft **26.1.2**. Other Minecraft versions receive ports at major releases. See the [version and release policy](docs/COMPATIBILITY.md) and [completed automated checks](docs/V1_VALIDATION.md).
 
 CraftGPT is a Fabric mod for AI-assisted building inside Minecraft. Select an area, describe your idea in the CraftBook, and inspect the generated draft. Ask for changes, then place it when you are happy with it.
 
 Generation uses your locally installed, signed-in Codex CLI or a configured API provider. Account limits and API charges apply. There is no separate CraftGPT backend to set up.
 
-**This is an experimental alpha.** Start in a spare world and keep backups. Generated beds, chests and furnaces are not supported yet. See [what is still rough](#what-is-still-rough) before trying it in an existing world.
+Generated beds, chests and furnaces are not supported yet. See [what is still rough](#what-is-still-rough) before trying it in an existing world.
 
 ## What you can do
 
@@ -39,7 +41,7 @@ The model chooses the materials. Local code expands geometry and checks the resu
 
 You need Minecraft Java Edition **26.1.2**, Fabric Loader **0.19.3 or newer**, and Fabric API. The current build uses Fabric API **0.154.0+26.1.2** and Java **25**.
 
-1. Download the CraftGPT JAR from [Releases](https://github.com/LivingPixel-pixel/CraftGPT/releases).
+1. Download the CraftGPT JAR for your exact Minecraft version from [the v1 prerelease](https://github.com/LivingPixel-pixel/CraftGPT/releases/tag/v1.0.0). Minecraft 26.1.2 is the primary build; the other files are experimental major-release ports.
 2. Put it and the matching Fabric API JAR in your Minecraft instance's `mods` folder. Remove any older CraftGPT JAR first.
 3. Launch Fabric and open a test world. For a dedicated server, install CraftGPT and Fabric API on both the server and client. Server permissions still apply.
 4. Run `/craftgpt book` and right-click the CraftBook.
@@ -119,7 +121,7 @@ To copy a versioned JAR into the separate release folder:
 .\gradlew.bat packageRelease
 ```
 
-The v1 candidate is copied to `releases/1.0.0/CraftGPT-1.0.0-mc26.1.2.jar`, alongside a SHA-256 checksum. Packaging does not publish a GitHub release.
+The v1 build is copied to `releases/1.0.0/CraftGPT-1.0.0-mc26.1.2.jar`, alongside a SHA-256 checksum. Packaging does not publish a GitHub release.
 
 For a major release port, select an exact Minecraft target, for example:
 

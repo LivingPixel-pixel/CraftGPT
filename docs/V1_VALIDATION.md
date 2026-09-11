@@ -1,12 +1,12 @@
-# v1 candidate validation
+# v1 validation record
 
-Local checks on 2026-09-11 for CraftGPT `1.0.0`, built outside OneDrive with the included Gradle wrapper. This records automated checks, not a published release or completed in-game testing.
+Local checks on 2026-09-11 for CraftGPT `1.0.0`, built outside OneDrive with the included Gradle wrapper. The build is being published as an experimental prerelease without extensive in-game testing. This record describes completed automated checks only.
 
 ## Primary build
 
 Minecraft **26.1.2** is the active development target. Both baseline Fabric dependencies and the pinned current profile passed compilation, tests and production JAR checks. Each profile ran **221 tests: 220 passed, one intentionally skipped**. The portable preview passed all **six** offline checks.
 
-Routine CI is configured for these two primary profiles. The changed GitHub workflow has not yet run remotely.
+Routine CI is configured for these two primary profiles. This local record does not claim a remote CI result; consult [GitHub Actions](https://github.com/LivingPixel-pixel/CraftGPT/actions) for current run status.
 
 ## Prepared major release ports
 
@@ -25,6 +25,6 @@ Baseline production JARs were built for all seven targets, with exact Minecraft 
 
 ## Remaining release checks
 
-Run the [live checklist](COMPATIBILITY.md#live-checks-before-shipping-a-major-release) on the primary build before publishing v1. Perform the same checks and the full Fabric profile matrix for each port intended for that major release. In-game UI, rendering, generation, dedicated-server play, resource packs, mixed modpacks and world rollback have not been verified by this automated pass.
+The [live checklist](COMPATIBILITY.md#live-checks-before-shipping-a-major-release) remains pending for this experimental prerelease. Perform those checks and the full Fabric profile matrix before treating a port as broadly validated. In-game UI, rendering, generation, dedicated-server play, resource packs, mixed modpacks and world rollback have not been verified by this automated pass.
 
 Day-to-day updates continue on Minecraft 26.1.2. Other versions ship only at major releases, as defined in [the release policy](COMPATIBILITY.md#primary-v1-development).

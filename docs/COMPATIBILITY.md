@@ -2,7 +2,7 @@
 
 ## Primary v1 development
 
-CraftGPT v1 uses **Minecraft Java 26.1.2 with Fabric** as its primary development target. Features, small improvements and fixes are developed and released there. The current source version is `1.0.0`; it is a local release candidate, not a claim of completed live validation or a published download.
+CraftGPT v1 uses **Minecraft Java 26.1.2 with Fabric** as its primary development target. Features, small improvements and fixes are developed and released there. Version `1.0.0` is an [experimental prerelease](https://github.com/LivingPixel-pixel/CraftGPT/releases/tag/v1.0.0), published without extensive in-game testing. The version number is not a stability guarantee.
 
 The [v1 validation record](V1_VALIDATION.md) lists the completed automated checks and remaining release checks.
 
@@ -80,4 +80,4 @@ Automated compilation and tests do not verify the complete in-game workflow. For
 6. Exercise rollback around existing block entities and verify inventory/NBT restoration and absence of duplicated drops. Test normal player block updates afterward.
 7. Test the intended modpack, especially rendering mods and mods that alter chunk placement. Record exact Minecraft, Loader, API and Java versions with the result.
 
-Keep the prior public release until the chosen candidate passes these checks. Publishing the candidate is a separate action from building it.
+Version 1.0.0 is being shared as an experimental prerelease before these live checks are complete. Keep that limitation prominent until the checks pass. Publishing remains a separate action from building.

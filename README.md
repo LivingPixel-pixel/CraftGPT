@@ -15,6 +15,12 @@
 
 <p align="center">Minecraft Java 26.1.2 &middot; Fabric &middot; v1.0.0 experimental prerelease</p>
 
+## Why I built it
+
+I wanted building with AI to feel like part of Minecraft: describe something, see it in the world, ask for changes and decide when to place it.
+
+I designed the mod, the building workflow and the generation pipeline, with AI assistance for implementation and checks. My focus is the quality of the finished build and giving the player control over each change. The source and prerelease below show where that work stands.
+
 **Released without extensive in-game testing.** Automated builds and tests passed, but gameplay, dedicated servers, resource packs, modpack compatibility and world recovery have not been extensively verified. Use a disposable world and keep backups. The v1 label marks our development baseline, not a stability guarantee.
 
 Day-to-day improvements target Minecraft **26.1.2**. Other Minecraft versions receive ports at major releases. See the [version and release policy](docs/COMPATIBILITY.md) and [completed automated checks](docs/V1_VALIDATION.md).
